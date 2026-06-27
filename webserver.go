@@ -220,10 +220,17 @@ func (serv *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Uploaded new Item",
 		slog.String("id", itemId), slog.Any("expires", item.Expires))
 
-	w.WriteHeader(http.StatusOK)
+	baseUrl  := fmt.Sprintf("%s://%s%s", WebProtocol(r), r.Host, serv.urlPrefix)
+	onlyUrl  := r.URL.Query().Has("onlyURL")
+	redirect := r.URL.Query().Has("redirect")
 
-	baseUrl := fmt.Sprintf("%s://%s%s", WebProtocol(r), r.Host, serv.urlPrefix)
-	onlyUrl := r.URL.Query().Has("onlyURL")
+	if redirect {
+        itemUrl := fmt.Sprintf("%s/%s", baseUrl, itemId)
+		http.Redirect(w, r, itemUrl, http.StatusSeeOther)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 
 	if onlyUrl {
 		_, _ = fmt.Fprintf(w, "%s/%s\n", baseUrl, itemId)
